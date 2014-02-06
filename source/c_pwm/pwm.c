@@ -84,6 +84,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
+
 #include "pwm.h"
 #include "mailbox.h"
 #include "../c_common/cpuinfo.h"
@@ -520,15 +521,141 @@ add_channel_pulse(int channel, int gpio, int width_start, int width)
     *(dp + width_start) |= 1 << gpio;
     cbp->dst = phys_gpset0;
 
-    // Do nothing for the specified width
-    for (i = 1; i < width - 1; i++) {
-        *(dp + width_start + i) &= ~(1 << gpio);  // set just this gpio's bit to 0
-        cbp += 2;
-    }
+	//PaulP - re-order to write the off code before clearing the mid region.
+	cbp += 2 * (width - 2);
 
     // Clear GPIO at end
     *(dp + width_start + width) |= 1 << gpio;
     cbp->dst = phys_gpclr0;
+
+	//PaulP - force a cache flush so this is in the DMA chain now.
+	__clear_cache((char*) (dp + width_start + width), (char*) (dp + width_start + width + 1));
+	__clear_cache((char*) (cbp), (char*) (cbp + 2));
+
+    // Do nothing for the specified width
+    for (i = 1; i < width - 1; i++) {
+        *(dp + width_start + i) &= ~(1 << gpio);  // set just this gpio's bit to 0        
+    }
+
+    return EXIT_SUCCESS;
+}
+
+//Write an 'on' instruction to the buffer at the specified position.
+int 
+buffer_set_on(int channel, int position)
+{
+    static uint32_t phys_gpset0 = 0x7e200000 + 0x1c;
+
+    //log_debug("buffer_set_on: channel=%d, position=%d\n", channel, position);
+    if (!channels[channel].virtbase)
+        return fatal("Error: channel %d has not been initialized with 'init_channel(..)'\n", channel);
+    if (position > channels[channel].width_max || position < 0)
+        return fatal("Error: position exceeds max_width of %d\n", channels[channel].width_max);
+
+    dma_cb_t *cbp = (dma_cb_t *) get_cb(channel) + (position * 2);
+	cbp->dst = phys_gpset0;
+	__clear_cache((char*) cbp, (char*) (cbp + 2));
+
+    return EXIT_SUCCESS;
+}
+
+//Write an 'off' instruction to the buffer at the specified position.
+int 
+buffer_set_off(int channel, int position)
+{
+    static uint32_t phys_gpclr0 = 0x7e200000 + 0x28;
+
+    //log_debug("buffer_set_on: channel=%d, position=%d\n", channel, position);
+    if (!channels[channel].virtbase)
+        return fatal("Error: channel %d has not been initialized with 'init_channel(..)'\n", channel);
+    if (position > channels[channel].width_max || position < 0)
+        return fatal("Error: position exceeds max_width of %d\n", channels[channel].width_max);
+
+	dma_cb_t *cbp = (dma_cb_t *) get_cb(channel) + (position * 2);
+	cbp->dst = phys_gpclr0;
+	__clear_cache((char*) cbp, (char*) (cbp + 2));
+
+    return EXIT_SUCCESS;
+}
+
+//Assign a gpio channel to a specific point in the buffer
+int 
+buffer_assign(int channel, int gpio, int position)
+{
+    uint32_t *dp = (uint32_t *) channels[channel].virtbase;
+
+    //log_debug("buffer_assign: channel=%d, gpio=%d, position=%d\n", channel, gpio, position);
+    if (!channels[channel].virtbase)
+        return fatal("Error: channel %d has not been initialized with 'init_channel(..)'\n", channel);
+    if (position > channels[channel].width_max || position < 0)
+        return fatal("Error: position exceeds max_width of %d\n", channels[channel].width_max);
+
+    if ((gpio_setup & 1<<gpio) == 0)
+        init_gpio(gpio);
+
+	*(dp + position) |= 1 << gpio;
+	__clear_cache((char*) (dp + position), (char*) (dp + position + 1));
+
+    return EXIT_SUCCESS;
+}
+
+//Unassign a gpio channel to a specific point in the buffer
+int 
+buffer_unassign(int channel, int gpio, int position)
+{
+    uint32_t *dp = (uint32_t *) channels[channel].virtbase;
+
+    //log_debug("buffer_unassign: channel=%d, gpio=%d, position=%d\n", channel, gpio, position);
+    if (!channels[channel].virtbase)
+        return fatal("Error: channel %d has not been initialized with 'init_channel(..)'\n", channel);
+    if (position > channels[channel].width_max || position < 0)
+        return fatal("Error: position exceeds max_width of %d\n", channels[channel].width_max);
+
+    if ((gpio_setup & 1<<gpio) == 0)
+        init_gpio(gpio);
+
+	*(dp + position) &= ~(1 << gpio);
+	__clear_cache((char*) (dp + position), (char*) (dp + position + 1));
+
+    return EXIT_SUCCESS;
+}
+
+// Get a channel's pagemap
+static int
+make_pagemap(int channel)
+{
+    int i, fd, memfd, pid;
+    char pagemap_fn[64];
+
+    channels[channel].page_map = malloc(channels[channel].num_pages * sizeof(*channels[channel].page_map));
+
+    if (channels[channel].page_map == 0)
+        return fatal("rpio-pwm: Failed to malloc page_map: %m\n");
+    memfd = open("/dev/mem", O_RDWR);
+    if (memfd < 0)
+        return fatal("rpio-pwm: Failed to open /dev/mem: %m\n");
+    pid = getpid();
+    sprintf(pagemap_fn, "/proc/%d/pagemap", pid);
+    fd = open(pagemap_fn, O_RDONLY);
+    if (fd < 0)
+        return fatal("rpio-pwm: Failed to open %s: %m\n", pagemap_fn);
+    if (lseek(fd, (uint32_t)channels[channel].virtbase >> 9, SEEK_SET) !=
+                        (uint32_t)channels[channel].virtbase >> 9) {
+        return fatal("rpio-pwm: Failed to seek on %s: %m\n", pagemap_fn);
+    }
+    for (i = 0; i < channels[channel].num_pages; i++) {
+        uint64_t pfn;
+        channels[channel].page_map[i].virtaddr = channels[channel].virtbase + i * PAGE_SIZE;
+        // Following line forces page to be allocated
+        channels[channel].page_map[i].virtaddr[0] = 0;
+        if (read(fd, &pfn, sizeof(pfn)) != sizeof(pfn))
+            return fatal("rpio-pwm: Failed to read %s: %m\n", pagemap_fn);
+        if (((pfn >> 55) & 0x1bf) != 0x10c)
+            return fatal("rpio-pwm: Page %d not present (pfn 0x%016llx)\n", i, pfn);
+        channels[channel].page_map[i].physaddr = (uint32_t)pfn << PAGE_SHIFT | 0x40000000;
+    }
+    close(fd);
+    close(memfd);
     return EXIT_SUCCESS;
 }
 
