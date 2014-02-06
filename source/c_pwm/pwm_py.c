@@ -271,7 +271,7 @@ static PyMethodDef pwm_methods[] = {
     {"clear_channel", py_clear_channel, METH_VARARGS, "Clear all pulses on this channel"},
     {"clear_channel_gpio", py_clear_channel_gpio, METH_VARARGS, "Clear one specific GPIO from this channel"},
     {"add_channel_pulse", py_add_channel_pulse, METH_VARARGS, "Add a specific pulse to a channel"},	
-	{"buffer_set_on", py_buffer_set_on, METH_VARARGS, "Write an off instruction to the buffer at the specified position"},
+	{"buffer_set_on", py_buffer_set_on, METH_VARARGS, "Write an on instruction to the buffer at the specified position"},
 	{"buffer_set_off", py_buffer_set_off, METH_VARARGS, "Write an off instruction to the buffer at the specified position"},
 	{"buffer_assign", py_buffer_assign, METH_VARARGS, "Assign a gpio channel to a specific point in the buffer"},
 	{"buffer_unassign", py_buffer_unassign, METH_VARARGS, "Unassign a gpio channel to a specific point in the buffer"},
