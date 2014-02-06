@@ -114,6 +114,21 @@ def add_channel_pulse(dma_channel, gpio, start, width):
     """
     return _PWM.add_channel_pulse(dma_channel, gpio, start, width)
 
+def buffer_set_on(dma_channel, position):
+    """Write an on instruction to the buffer at the specified position"""
+    return _PWM.buffer_set_on(dma_channel, position)
+
+def buffer_set_off(dma_channel, position):
+    """Write an off instruction to the buffer at the specified position"""
+    return _PWM.buffer_set_off(dma_channel, position)
+
+def buffer_assign(dma_channel, gpio, position):
+    """Assign a gpio channel to a specific point in the buffer"""
+    return _PWM.buffer_assign(dma_channel, gpio, position)
+
+def buffer_unassign(dma_channel, gpio, position):
+    """Unassign a gpio channel to a specific point in the buffer"""
+    return _PWM.buffer_unassign(dma_channel, gpio, position)
 
 def print_channel(channel):
     """ Print info about a specific channel to stdout """
