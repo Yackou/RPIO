@@ -132,6 +132,70 @@ py_add_channel_pulse(PyObject *self, PyObject *args)
     return Py_None;
 }
 
+// python function (void) buffer_set_on(int channel, int position)
+static PyObject*
+py_buffer_set_on(PyObject *self, PyObject *args)
+{
+    int channel, position;
+
+    if (!PyArg_ParseTuple(args, "ii", &channel, &position))
+        return NULL;
+
+    if (buffer_set_on(channel, position) == EXIT_FAILURE)
+        return raise_error();
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+// python function (void) buffer_set_off(int channel, int position)
+static PyObject*
+py_buffer_set_off(PyObject *self, PyObject *args)
+{
+    int channel, position;
+
+    if (!PyArg_ParseTuple(args, "ii", &channel, &position))
+        return NULL;
+
+    if (buffer_set_off(channel, position) == EXIT_FAILURE)
+        return raise_error();
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+// python function (void) buffer_assign(int channel, int gpio, int position)
+static PyObject*
+py_buffer_assign(PyObject *self, PyObject *args)
+{
+    int channel, gpio, position;
+
+    if (!PyArg_ParseTuple(args, "iii", &channel, &gpio, &position))
+        return NULL;
+
+    if (buffer_assign(channel, gpio, position) == EXIT_FAILURE)
+        return raise_error();
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+// python function (void) buffer_assign(int channel, int gpio, int position)
+static PyObject*
+py_buffer_unassign(PyObject *self, PyObject *args)
+{
+    int channel, gpio, position;
+
+    if (!PyArg_ParseTuple(args, "iii", &channel, &gpio, &position))
+        return NULL;
+
+    if (buffer_unassign(channel, gpio, position) == EXIT_FAILURE)
+        return raise_error();
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 // python function print_channel(int channel)
 static PyObject*
 py_print_channel(PyObject *self, PyObject *args)
@@ -206,7 +270,11 @@ static PyMethodDef pwm_methods[] = {
     {"init_channel", py_init_channel, METH_VARARGS, "Setup a channel with a specific period time and hardware"},
     {"clear_channel", py_clear_channel, METH_VARARGS, "Clear all pulses on this channel"},
     {"clear_channel_gpio", py_clear_channel_gpio, METH_VARARGS, "Clear one specific GPIO from this channel"},
-    {"add_channel_pulse", py_add_channel_pulse, METH_VARARGS, "Add a specific pulse to a channel"},
+    {"add_channel_pulse", py_add_channel_pulse, METH_VARARGS, "Add a specific pulse to a channel"},	
+	{"buffer_set_on", py_buffer_set_on, METH_VARARGS, "Write an off instruction to the buffer at the specified position"},
+	{"buffer_set_off", py_buffer_set_off, METH_VARARGS, "Write an off instruction to the buffer at the specified position"},
+	{"buffer_assign", py_buffer_assign, METH_VARARGS, "Assign a gpio channel to a specific point in the buffer"},
+	{"buffer_unassign", py_buffer_unassign, METH_VARARGS, "Unassign a gpio channel to a specific point in the buffer"},
     {"print_channel", py_print_channel, METH_VARARGS, "Print info about a specific channel"},
     {"set_loglevel", py_set_loglevel, METH_VARARGS, "Set the loglevel to either 0 (debug) or 1 (errors)"},
     {"is_setup", py_is_setup, METH_VARARGS, "Returns 1 is setup(..) has been called, else 0"},
