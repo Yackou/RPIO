@@ -32,6 +32,11 @@ int clear_channel_gpio(int channel, int gpio);
 int print_channel(int channel);
 
 int add_channel_pulse(int channel, int gpio, int width_start, int width);
+int buffer_set_on(int channel, int position);
+int buffer_set_off(int channel, int position);
+int buffer_assign(int channel, int gpio, int position);
+int buffer_unassign(int channel, int gpio, int position);
+
 char* get_error_message(void);
 void set_softfatal(int enabled);
 
