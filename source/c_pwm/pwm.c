@@ -86,6 +86,7 @@
 #include <sys/mman.h>
 #include "pwm.h"
 #include "mailbox.h"
+#include "../c_common/cpuinfo.h"
 // 15 DMA channels are usable on the RPi (0..14)
 #define DMA_CHANNELS    15
 
@@ -103,10 +104,13 @@ static uint32_t mem_flag = 0x0c;
 
 // Memory Addresses
 
-static volatile unsigned int	 BCM2708_PERI_BASE = 0x20000000 ; //for PI1
+#define BCM2708_PERI_BASE   0x20000000
+#define BCM2709_PERI_BASE   0x3f000000
+static volatile unsigned int	 peri_base;
 
 static volatile unsigned int     periph_phys_base = 0x7e000000;
-static volatile unsigned int     periph_virt_base = 0x20000000;
+//static volatile unsigned int     periph_virt_base = 0x20000000;
+//static volatile unsigned int     periph_virt_base = 0x3f000000;
 
 #define DMA_BASE_OFFSET		0x00007000
 #define PWM_BASE_OFFSET		0x0020C000
@@ -114,11 +118,11 @@ static volatile unsigned int     periph_virt_base = 0x20000000;
 #define GPIO_BASE_OFFSET	0x00200000
 #define PCM_BASE_OFFSET		0x00203000
 
-#define DMA_VIRT_BASE		(periph_virt_base + DMA_BASE_OFFSET)
-#define PWM_VIRT_BASE		(periph_virt_base + PWM_BASE_OFFSET)
-#define CLK_VIRT_BASE		(periph_virt_base + CLK_BASE_OFFSET)
-#define GPIO_VIRT_BASE		(periph_virt_base + GPIO_BASE_OFFSET)
-#define PCM_VIRT_BASE		(periph_virt_base + PCM_BASE_OFFSET)
+#define DMA_VIRT_BASE		(peri_base + DMA_BASE_OFFSET)
+#define PWM_VIRT_BASE		(peri_base + PWM_BASE_OFFSET)
+#define CLK_VIRT_BASE		(peri_base + CLK_BASE_OFFSET)
+#define GPIO_VIRT_BASE		(peri_base + GPIO_BASE_OFFSET)
+#define PCM_VIRT_BASE		(peri_base + PCM_BASE_OFFSET)
 
 #define PWM_PHYS_BASE		(periph_phys_base + PWM_BASE_OFFSET)
 #define PCM_PHYS_BASE		(periph_phys_base + PCM_BASE_OFFSET)
@@ -715,22 +719,34 @@ get_error_message(void)
 int
 setup(int pw_incr_us, int hw)
 {
-    unsigned char buf[4];
-    FILE *fp;
+    int type;
+    char revision_hex[1024];
+	
+    type = get_cpuinfo_revision(revision_hex);
+    if ((type & 0x100) == 0)
+        peri_base = BCM2708_PERI_BASE;
+    else
+        peri_base = BCM2709_PERI_BASE;
+    
+    mem_flag  = 0x04;
+//    unsigned char buf[4];
+//    FILE *fp;
 
     // get peri base from device tree
-    if ((fp = fopen("/proc/device-tree/soc/ranges", "rb")) != NULL) {
-        fseek(fp, 4, SEEK_SET);
-        if (fread(buf, 1, sizeof buf, fp) == sizeof buf) {
-            BCM2708_PERI_BASE = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3] << 0;
-        }
-        fclose(fp);
-    }
-    if(BCM2708_PERI_BASE != periph_virt_base)
-	{
-	    periph_virt_base = BCM2708_PERI_BASE;
-	   	mem_flag  = 0x04;
-	}
+//    if ((fp = fopen("/proc/device-tree/soc/ranges", "rb")) != NULL) {
+//        fseek(fp, 4, SEEK_SET);
+//        if (fread(buf, 1, sizeof buf, fp) == sizeof buf) {
+//            PERI_BASE = buf[0] << 24 | buf[1] << 16 | buf[2] << 8 | buf[3] << 0;
+//        }
+//        fclose(fp);
+//    }
+    
+	
+//    if(peri_base != periph_virt_base)
+//	{
+//	    periph_virt_base = PERI_BASE;
+//	   	mem_flag  = 0x04;
+//	}
     delay_hw = hw;
     pulse_width_incr_us = pw_incr_us;
 

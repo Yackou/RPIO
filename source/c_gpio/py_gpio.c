@@ -27,7 +27,7 @@
  */
 #include "Python.h"
 #include "c_gpio.h"
-#include "cpuinfo.h"
+#include "../c_common/cpuinfo.h"
 
 // All these will get exposed via the Python module
 static PyObject *WrongDirectionException;

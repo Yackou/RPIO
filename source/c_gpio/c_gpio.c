@@ -31,7 +31,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include "c_gpio.h"
-#include "cpuinfo.h"
+#include "../c_common/cpuinfo.h"
 
 #define BCM2708_PERI_BASE   0x20000000
 #define BCM2709_PERI_BASE   0x3f000000
