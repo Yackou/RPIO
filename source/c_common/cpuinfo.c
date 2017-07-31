@@ -93,3 +93,37 @@ get_cpuinfo_revision(char *revision_hex)
 
     return (bcm2709 << 8) | board_rev;
 }
+
+uint32_t get_peri_base(void){
+	uint32_t base = 0x20000000;
+	FILE * filp;
+	char buf[512];
+
+	filp = fopen ("/proc/cpuinfo", "r");
+
+	if (filp != NULL)
+	{
+		while (fgets(buf, sizeof(buf), filp) != NULL)
+		{
+			if (!strncasecmp("model name", buf, 10))
+			{
+				if (strstr (buf, "ARMv6") != NULL)
+				{
+					base = 0x20000000;
+					break;
+				}
+				else if ((strstr (buf, "ARMv7") != NULL) | //
+						(strstr (buf, "ARMv8") != NULL) | 
+						(strstr (buf, "CPU architecture: 7") != NULL) | // aarch64 kernel may report this way
+						(strstr (buf, "CPU architecture: 8") != NULL)) // aarch64 kernel may report this way
+				{
+					base = 0x3F000000;
+					break;
+				}
+			}
+		}
+
+		fclose(filp);
+	}
+	return base;
+}
