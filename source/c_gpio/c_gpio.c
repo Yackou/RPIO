@@ -33,8 +33,8 @@
 #include "c_gpio.h"
 #include "../c_common/cpuinfo.h"
 
-#define BCM2708_PERI_BASE   0x20000000
-#define BCM2709_PERI_BASE   0x3f000000
+//#define BCM2708_PERI_BASE   0x20000000
+//#define BCM2709_PERI_BASE   0x3f000000
 #define GPIO_BASE           (peri_base + 0x200000)
 #define OFFSET_FSEL         0   // 0x0000
 #define OFFSET_SET          7   // 0x001c / 4
@@ -83,11 +83,12 @@ setup(void)
     if ((uint32_t)gpio_mem % PAGE_SIZE)
         gpio_mem += PAGE_SIZE - ((uint32_t)gpio_mem % PAGE_SIZE);
 
-    type = get_cpuinfo_revision(revision_hex);
-    if ((type & 0x100) == 0)
-        peri_base = BCM2708_PERI_BASE;
-    else
-        peri_base = BCM2709_PERI_BASE;
+//    type = get_cpuinfo_revision(revision_hex);
+	peri_base = get_peri_base();
+//    if ((type & 0x100) == 0)
+//        peri_base = BCM2708_PERI_BASE;
+//    else
+//        peri_base = BCM2709_PERI_BASE;
 
     gpio_map = (uint32_t *)mmap( (caddr_t)gpio_mem, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, mem_fd, GPIO_BASE);
 

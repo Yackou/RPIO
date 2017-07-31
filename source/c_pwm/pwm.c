@@ -722,12 +722,12 @@ setup(int pw_incr_us, int hw)
     int type;
     char revision_hex[1024];
 	
-    type = get_cpuinfo_revision(revision_hex);
-    if ((type & 0x100) == 0)
-        peri_base = BCM2708_PERI_BASE;
-    else
-        peri_base = BCM2709_PERI_BASE;
-    
+//    type = get_cpuinfo_revision(revision_hex);
+//    if ((type & 0x100) == 0)
+//        peri_base = BCM2708_PERI_BASE;
+//    else
+//        peri_base = BCM2709_PERI_BASE;
+    peri_base = get_peri_base();
     mem_flag  = 0x04;
 //    unsigned char buf[4];
 //    FILE *fp;
