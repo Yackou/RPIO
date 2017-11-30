@@ -22,6 +22,9 @@
  *
  *     http://pythonhosted.org/RPIO
  */
+
+#include <stdint.h>
+
 int get_cpuinfo_revision(char *revision_hex);
 
 uint32_t get_peri_base(void);
