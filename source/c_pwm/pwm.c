@@ -612,6 +612,38 @@ buffer_unassign(int channel, int gpio, int position)
     return EXIT_SUCCESS;
 }
 
+//Assign and clear a set of gpios at a specific point in the buffer
+int
+buffer_set_mask(int channel, unsigned int set, unsigned int mask, int position)
+{
+    uint32_t *dp = (uint32_t *) channels[channel].virtbase;
+    uint32_t value;
+
+    //log_debug("buffer_assign: channel=%d, gpio=%d, position=%d\n", channel, gpio, position);
+    if (!channels[channel].virtbase)
+        return fatal("Error: channel %d has not been initialized with 'init_channel(..)'\n", channel);
+    if (position > channels[channel].width_max || position < 0)
+        return fatal("Error: position exceeds max_width of %d\n", channels[channel].width_max);
+
+    if ((gpio_setup & mask) != mask) {
+        int gpio;
+        for (gpio = 0; gpio < 32; gpio++) {
+            if ((mask & 1<<gpio) == 0)
+                continue;
+
+            if ((gpio_setup & 1<<gpio) == 0)
+                init_gpio(gpio);
+        }
+    }
+
+    value = *(dp + position);
+    value &= ~mask;
+    value |= set & mask;
+    *(dp + position) = value;
+
+    return EXIT_SUCCESS;
+}
+
 static int
 init_virtbase(int channel)
 {

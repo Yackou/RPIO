@@ -130,6 +130,10 @@ def buffer_unassign(dma_channel, gpio, position):
     """Unassign a gpio channel to a specific point in the buffer"""
     return _PWM.buffer_unassign(dma_channel, gpio, position)
 
+def buffer_set_mask(dma_channel, set, mask, position):
+    """Assign and clear a set of gpios at a specific point in the buffer"""
+    return _PWM.buffer_set_mask(dma_channel, set, mask, position)
+
 def print_channel(channel):
     """ Print info about a specific channel to stdout """
     return _PWM.print_channel(channel)

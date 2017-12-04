@@ -36,6 +36,7 @@ int buffer_set_on(int channel, int position);
 int buffer_set_off(int channel, int position);
 int buffer_assign(int channel, int gpio, int position);
 int buffer_unassign(int channel, int gpio, int position);
+int buffer_set_mask(int channel, unsigned int set, unsigned int mask, int position);
 
 char* get_error_message(void);
 void set_softfatal(int enabled);
