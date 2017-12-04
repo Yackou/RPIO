@@ -70,8 +70,8 @@ short_wait(void)
 int
 setup(void)
 {
-    int mem_fd, type;
-    char revision_hex[1024];
+    int mem_fd;//, type;
+//    char revision_hex[1024];
     uint8_t *gpio_mem;
 
     if ((mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0)

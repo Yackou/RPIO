@@ -571,9 +571,9 @@ buffer_set_off(int channel, int position)
     if (position > channels[channel].width_max || position < 0)
         return fatal("Error: position exceeds max_width of %d\n", channels[channel].width_max);
 
-	dma_cb_t *cbp = (dma_cb_t *) get_cb(channel) + (position * 2);
-	cbp->dst = phys_gpclr0;
-	__clear_cache((char*) cbp, (char*) (cbp + 2));
+    dma_cb_t *cbp = (dma_cb_t *) get_cb(channel) + (position * 2);
+    cbp->dst = phys_gpclr0;
+    __clear_cache((char*) cbp, (char*) (cbp + 2));
 
     return EXIT_SUCCESS;
 }
@@ -593,8 +593,8 @@ buffer_assign(int channel, int gpio, int position)
     if ((gpio_setup & 1<<gpio) == 0)
         init_gpio(gpio);
 
-	*(dp + position) |= 1 << gpio;
-	__clear_cache((char*) (dp + position), (char*) (dp + position + 1));
+    *(dp + position) |= 1 << gpio;
+    __clear_cache((char*) (dp + position), (char*) (dp + position + 1));
 
     return EXIT_SUCCESS;
 }
@@ -614,8 +614,8 @@ buffer_unassign(int channel, int gpio, int position)
     if ((gpio_setup & 1<<gpio) == 0)
         init_gpio(gpio);
 
-	*(dp + position) &= ~(1 << gpio);
-	__clear_cache((char*) (dp + position), (char*) (dp + position + 1));
+    *(dp + position) &= ~(1 << gpio);
+    __clear_cache((char*) (dp + position), (char*) (dp + position + 1));
 
     return EXIT_SUCCESS;
 }
@@ -807,8 +807,8 @@ get_error_message(void)
 int
 setup(int pw_incr_us, int hw)
 {
-    int type;
-    char revision_hex[1024];
+//    int type;
+//    char revision_hex[1024];
 	
 //    type = get_cpuinfo_revision(revision_hex);
 //    if ((type & 0x100) == 0)
