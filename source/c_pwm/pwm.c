@@ -620,45 +620,6 @@ buffer_unassign(int channel, int gpio, int position)
     return EXIT_SUCCESS;
 }
 
-// Get a channel's pagemap
-static int
-make_pagemap(int channel)
-{
-    int i, fd, memfd, pid;
-    char pagemap_fn[64];
-
-    channels[channel].page_map = malloc(channels[channel].num_pages * sizeof(*channels[channel].page_map));
-
-    if (channels[channel].page_map == 0)
-        return fatal("rpio-pwm: Failed to malloc page_map: %m\n");
-    memfd = open("/dev/mem", O_RDWR);
-    if (memfd < 0)
-        return fatal("rpio-pwm: Failed to open /dev/mem: %m\n");
-    pid = getpid();
-    sprintf(pagemap_fn, "/proc/%d/pagemap", pid);
-    fd = open(pagemap_fn, O_RDONLY);
-    if (fd < 0)
-        return fatal("rpio-pwm: Failed to open %s: %m\n", pagemap_fn);
-    if (lseek(fd, (uint32_t)channels[channel].virtbase >> 9, SEEK_SET) !=
-                        (uint32_t)channels[channel].virtbase >> 9) {
-        return fatal("rpio-pwm: Failed to seek on %s: %m\n", pagemap_fn);
-    }
-    for (i = 0; i < channels[channel].num_pages; i++) {
-        uint64_t pfn;
-        channels[channel].page_map[i].virtaddr = channels[channel].virtbase + i * PAGE_SIZE;
-        // Following line forces page to be allocated
-        channels[channel].page_map[i].virtaddr[0] = 0;
-        if (read(fd, &pfn, sizeof(pfn)) != sizeof(pfn))
-            return fatal("rpio-pwm: Failed to read %s: %m\n", pagemap_fn);
-        if (((pfn >> 55) & 0x1bf) != 0x10c)
-            return fatal("rpio-pwm: Page %d not present (pfn 0x%016llx)\n", i, pfn);
-        channels[channel].page_map[i].physaddr = (uint32_t)pfn << PAGE_SHIFT | 0x40000000;
-    }
-    close(fd);
-    close(memfd);
-    return EXIT_SUCCESS;
-}
-
 static int
 init_virtbase(int channel)
 {
