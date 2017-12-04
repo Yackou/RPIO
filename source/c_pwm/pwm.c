@@ -528,10 +528,6 @@ add_channel_pulse(int channel, int gpio, int width_start, int width)
     *(dp + width_start + width) |= 1 << gpio;
     cbp->dst = phys_gpclr0;
 
-	//PaulP - force a cache flush so this is in the DMA chain now.
-	__clear_cache((char*) (dp + width_start + width), (char*) (dp + width_start + width + 1));
-	__clear_cache((char*) (cbp), (char*) (cbp + 2));
-
     // Do nothing for the specified width
     for (i = 1; i < width - 1; i++) {
         *(dp + width_start + i) &= ~(1 << gpio);  // set just this gpio's bit to 0        
@@ -554,7 +550,6 @@ buffer_set_on(int channel, int position)
 
     dma_cb_t *cbp = (dma_cb_t *) get_cb(channel) + (position * 2);
 	cbp->dst = phys_gpset0;
-	__clear_cache((char*) cbp, (char*) (cbp + 2));
 
     return EXIT_SUCCESS;
 }
@@ -573,7 +568,6 @@ buffer_set_off(int channel, int position)
 
     dma_cb_t *cbp = (dma_cb_t *) get_cb(channel) + (position * 2);
     cbp->dst = phys_gpclr0;
-    __clear_cache((char*) cbp, (char*) (cbp + 2));
 
     return EXIT_SUCCESS;
 }
@@ -594,7 +588,6 @@ buffer_assign(int channel, int gpio, int position)
         init_gpio(gpio);
 
     *(dp + position) |= 1 << gpio;
-    __clear_cache((char*) (dp + position), (char*) (dp + position + 1));
 
     return EXIT_SUCCESS;
 }
@@ -615,7 +608,6 @@ buffer_unassign(int channel, int gpio, int position)
         init_gpio(gpio);
 
     *(dp + position) &= ~(1 << gpio);
-    __clear_cache((char*) (dp + position), (char*) (dp + position + 1));
 
     return EXIT_SUCCESS;
 }
